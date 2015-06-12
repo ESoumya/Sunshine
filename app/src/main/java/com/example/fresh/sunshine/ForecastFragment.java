@@ -1,10 +1,14 @@
 package com.example.fresh.sunshine;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -32,10 +36,31 @@ public class ForecastFragment extends Fragment {
     private final String LOGTAG = "MainActivityFragment";
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.forecast_fragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_refresh) {
+            FetchWeatherTask weatherTask = new FetchWeatherTask();
+            weatherTask.execute();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
 
 
         String[] forecastArray = {
@@ -66,15 +91,36 @@ public class ForecastFragment extends Fragment {
         return rootView;
     }
 
-    public class FetchWeatherTask extends AsyncTask<Void, Void, Void> {
-        protected Void doInBackground(Void...params){
+    public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
+        protected Void doInBackground(String...params){
+
+
             HttpURLConnection urlCon = null;
             BufferedReader reader = null;
 
             String forecastJsonStr =  null;
 
+            String format = "json";
+            String units = "metric";
+            int numDays = 7;
+
             try {
-                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=50014&cnt=7&mode=json&units=metric");
+                final String FORECAST_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
+                final String QUERY_PARAM = "q";
+                final String FORMAT_PARAM = "mode";
+                final String UNITS_PARAM = "units";
+                final String DAYS_PARAM = "cnt";
+
+                Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
+                        .appendQueryParameter(QUERY_PARAM, params[0])
+                        .appendQueryParameter(FORMAT_PARAM, params[0])
+                        .appendQueryParameter(UNITS_PARAM, params[0])
+                        .appendQueryParameter(DAYS_PARAM, params[0])
+                        .build();
+
+                Log.v(LOGTAG, "Built URI " + builtUri.toString());
+
+                URL url = new URL("q=50014&cnt=7&mode=json&units=metric");
 
                 urlCon = (HttpURLConnection) url.openConnection();
                 urlCon.setRequestMethod("GET");
